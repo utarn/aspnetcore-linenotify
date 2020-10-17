@@ -5,15 +5,23 @@
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-    <p>
-        <form asp-action="LineNotify" method="post" class="form-horizontal" role="form">
-            <button type="submit" class="btn btn-default" name="provider" value="LineNotify" title="Grant your line ntofiy">Add LineNotify</button>
-        </form>
-    </p>
-    <p>
-        <form asp-action="Index" method="post">
-            <input type="text" cols="40" rows="5" name="message" />
-            <input type="submit" value="Send message" />
-        </form>
-    </p>
+    @if ((bool)ViewData["IsValid"]) 
+    {
+         <p>
+            <form asp-action="Index" method="post">
+                <input type="text" cols="40" rows="5" name="message" />
+                <input type="submit" value="Send message" />
+            </form>
+        </p>
+        <p>
+            <a asp-action="Revoke" class="btn btn-danger">Revoke</a>
+        </p>
+    } else {
+        <p>
+            <form asp-action="LineNotify" method="post" class="form-horizontal" role="form">
+                <button type="submit" class="btn btn-default" name="provider" value="LineNotify" title="Grant your line ntofiy">Add LineNotify</button>
+            </form>
+        </p>        
+    }
+   
 </div>

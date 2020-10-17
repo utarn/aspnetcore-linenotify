@@ -16,22 +16,17 @@ namespace aspnetcore_linenotify.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
         private readonly LineNotify _lineNotify;
         public HomeController(ILogger<HomeController> logger,
-                              SignInManager<IdentityUser> signInManager,
-                              UserManager<IdentityUser> userManager,
                               LineNotify lineNotify)
         {
             _logger = logger;
-            _signInManager = signInManager;
-            _userManager = userManager;
             _lineNotify = lineNotify;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            ViewData["IsValid"] = await _lineNotify.IsValid();
             return View();
         }
 
@@ -45,10 +40,7 @@ namespace aspnetcore_linenotify.Controllers
         [HttpPost]
         public IActionResult LineNotify(string provider)
         {
-            var redirectUrl = Url.Action("LineNotifyCallback", "Home");
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, userId);
-            return Challenge(properties, provider);
+            return _lineNotify.Authorize();
         }
 
         [HttpGet]
@@ -59,24 +51,22 @@ namespace aspnetcore_linenotify.Controllers
                 ModelState.AddModelError(string.Empty, "Error from Line provider");
                 return View("Index");
             }
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var info = await _signInManager.GetExternalLoginInfoAsync(userId);
-            if (info == null)
+            var callBackResponse = await _lineNotify.CallBack();
+            if (callBackResponse)
             {
                 return RedirectToAction("Index");
             }
-
-            var user = await _userManager.GetUserAsync(User);
-
-            await _userManager.RemoveClaimsAsync(user, info.Principal.Claims);
-            foreach (var claim in info.Principal.Claims)
+            else
             {
-                await _userManager.AddClaimAsync(user, claim);
+                return RedirectToAction("Index");
             }
-            // await _userManager.AddClaimsAsync(user, info.Princial.Claims)
-            return RedirectToAction("Index");
         }
 
+        public async Task<IActionResult> Revoke()
+        {
+            await _lineNotify.Revoke();
+            return RedirectToAction("Index");
+        }
 
     }
 }
